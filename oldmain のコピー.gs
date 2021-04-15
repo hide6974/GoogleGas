@@ -12,8 +12,10 @@ var scope = "https://www.googleapis.com/auth/photoslibrary.readonly"// 利用し
 //共通定数
 //var sheet = SpreadsheetApp.getActive();不採用->これはパラメータ（String,number,number）が SpreadsheetApp.Spreadsheet.getRange のメソッドのシグネチャと一致しませんとエラーになる
 var sheet = SpreadsheetApp.getActiveSheet();
+
 var width ='w2048'
 var height ='h1024'
+var plusop ='=' + width + '-' + height
 
 // googleSpredsheet スクリプトボタンを押した時に呼ぶ関数
 function getAlbumInformation() {
@@ -27,7 +29,7 @@ function getAlbumInformation() {
     ui.showModalDialog(output, 'OAuth2.0認証')
   } else {
     //2. 認証されている場合、Albumを取得する
-    getAllAlbums() 
+    getAllAlbums() //後ほど記述します。
   }
 }
 
@@ -72,18 +74,31 @@ function getAllAlbums() {
   // Access Tokenを取得
   accessToken = service.getAccessToken()
 
-  // 1.画像URL一覧を取得する
+  // //1. アルバム一覧を取得する
+  // var rawAlbums = getAlbums()
+  // if (!rawAlbums) {
+  //   return Browser.msgBox('アルバムの取得に失敗しました')
+  // }
+
+  // //2.アルバムを二元配列に変換する
+  // var classAlbums = rawAlbums.map(function(e) {
+  //   // e['title']でアルバムの名前を取得できる
+  //   return [e['title']]
+  // })
+
+  // 2-1.画像URL一覧を取得する
   var rawPhotoUrlList = getPhotoUrl()
   if (!rawPhotoUrlList) {
     return Browser.msgBox('画像取得に失敗しました')
   }
 
-  //2.画像URLを二元配列に変換、URL後ろにオプション=w2028-h1024add
+  //2-2.画像URLを二元配列に変換する
   var classPhotoURLList = rawPhotoUrlList.map(function(e) {
-    return [e['baseUrl'] + '=' + width + '-' + height]
+    return [e['baseUrl'] + plusop]
   })
 
-  // 2-3.画像URLの中から１つだけの画像にランダムで設定する。一覧を取得する
+ 　// 2-3.画像URLの中から１つだけの画像にランダムで設定する。一覧を取得する
+  //var classPhotoRandom = getPhotoRandom(classPhotoURLList)
   var classPhotoRandom = classPhotoURLList[Math.floor(Math.random()*classPhotoURLList.length)]
   
   if (!classPhotoRandom) {
@@ -91,7 +106,30 @@ function getAllAlbums() {
   }
 
   //4.セルに書き出す
-  sheet.getRange(1, 1).setValue(classPhotoRandom)
+// sheet.getRange(1, 1, classAlbums.length).setValues(classAlbums)
+ sheet.getRange(1, 2).setValue(classPhotoRandom)
+
+}
+
+//アルバム一覧を取得する
+function getAlbums(){  
+  //defalutで20件しか取得できないのでparamaterを設定して50件取得する
+  var response = UrlFetchApp.fetch(baseUrl + '?pageSize=50', {
+    method: 'GET',
+    headers: {
+      Authorization: 'Bearer ' + accessToken
+    },
+    contentType: "application/json",
+    muteHttpExceptions: true
+  });
+  var responseCode = response.getResponseCode()
+  // 50件しか取得できない
+  if (responseCode === 200) {
+    var result = JSON.parse(response.getContentText())
+    return result['albums']
+  } else {
+    return null
+  }  
 }
 
 //MediaItemsから共有アルバムIDを取得し、画像URLを取得する
