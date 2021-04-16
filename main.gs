@@ -94,7 +94,7 @@ function getAllAlbums() {
 
   //4.セルに書き出す
   //sheet.getRange(1, 1,rawPhotoUrlList.length).setValues(rawPhotoUrlList)
-  //sheet.getRange(1, 1,rawPhotoUrlList.length).setValue(rawPhotoUrlList)
+  sheet.getRange(1, 1,rawPhotoUrlList.length).setValue(rawPhotoUrlList)
 
 }
 
@@ -126,7 +126,6 @@ function getAlbumId(){
  * 共有可能なフォルダ一覧を取得し、該当のyyyymmの共有フォルダIDをリスト取得
  * @return albumsIdList
  */
-// 共有アルバムIDを取得し、画像URLのalbumsを取得する TODOアルバムIDを変更する
 function getAlbumsIdList(){  
   //defalutで20件しか取得できないのでparamaterを設定して50件取得する
   let response = UrlFetchApp.fetch('https://photoslibrary.googleapis.com/v1/albums/' + '?pageSize=50', {
@@ -136,7 +135,6 @@ function getAlbumsIdList(){
     },
     contentType: "application/json",
     "pageSize":"100",
-    //"albumId": "AOOxg_BRb6LUcCdYEwUcx92ZNla3tmcznZSItkR-cajIOvpekT0qGPy_iEAWB4ggeuU5UbGC00d9",
     muteHttpExceptions: true
   });
   
@@ -162,6 +160,7 @@ function getPhotoUrl(){
       Authorization: 'Bearer ' + accessToken
     },
     contentType: "application/json",
+    "pageSize":"100",
     muteHttpExceptions: true
   });
   
@@ -231,8 +230,8 @@ function pushmessage_image(classPhotoRandom) {
 function getPhotoUrlList(albumsIdList){
   let photoUrlList = [];
    for(var i=0; i<albumsIdList.length; i++){
-    let response = UrlFetchApp.fetch('https://photoslibrary.googleapis.com/v1/albums/', {
-        method: 'Get',
+    let response = UrlFetchApp.fetch('https://photoslibrary.googleapis.com/v1/mediaItems:search', {
+        method: 'POST',
         headers: {
           Authorization: 'Bearer ' + accessToken
         },
@@ -245,9 +244,9 @@ function getPhotoUrlList(albumsIdList){
     let responseCode = response.getResponseCode()
     if (responseCode !== 200) return null;
     let result = JSON.parse(response.getContentText())
-       for(var j=0; j<result['albums'].length; j++){
-       // フォルダの中からcoverPhotoBaseUrlを取得し返却する
-       photoUrlList.push(result['albums'][j]['coverPhotoBaseUrl']) 
+       for(var j=0; j<result['mediaItems'].length; j++){
+       // フォルダの中からUrlを取得し返却する
+       photoUrlList.push(result['mediaItems'][j]['baseUrl']) 
        }
     }
   return photoUrlList;
