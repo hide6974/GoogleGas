@@ -83,14 +83,18 @@ function getAllAlbums() {
   var rawPhotoUrlList = getPhotoUrlList(rawPhotoAlbumsUrlList)
 
   // 3.画像URLの中から１つだけの画像にランダムで設定する。一覧を取得する
+  
   var classPhotoRandom = rawPhotoUrlList[Math.floor(Math.random()*rawPhotoUrlList.length)]
   
+
   if (!classPhotoRandom) {
     return Browser.msgBox('画像１つだけ取得失敗しました')
   }
 
+  // 4.名言取得
+  var meigen = get_meigen();
   // 4.Line送信する
-　pushmessage_image(classPhotoRandom)
+　pushmessageLine(classPhotoRandom,meigen)
 
   //4.セルに書き出す
   //sheet.getRange(1, 1,rawPhotoUrlList.length).setValues(rawPhotoUrlList)
@@ -197,7 +201,7 @@ function pushmessage_test(classPhotoRandom) {
    })
 }
 //LINEBOTで画像メッセージを送る
-function pushmessage_image(classPhotoRandom) {
+function pushmessageLine(classPhotoRandom,meigen) {
   const rawMainPhotoURL =classPhotoRandom + '=w1024-h1024';
   const rawpreviewImageUrl =classPhotoRandom + '=w240-h240';
   const linebotAccessToken = PropertiesService.getScriptProperties().getProperty('LINEBOT_ACCESS_TOKEN');
@@ -212,10 +216,13 @@ function pushmessage_image(classPhotoRandom) {
     'method': 'POST',
     'payload': JSON.stringify({
       'to': lineGroupID, //LINEユーザID
-      'messages': [{
+      'messages' 
+      : [{
         'type': 'image',
         'originalContentUrl': rawMainPhotoURL,
-        'previewImageUrl': rawpreviewImageUrl
+        'previewImageUrl': rawpreviewImageUrl,
+        'type': 'text','text': meigen,
+      //},{'type': 'text','text': meigen 
       }],
       'notificationDisabled': true // trueだとユーザーに通知しない
     }),
@@ -251,3 +258,22 @@ function getPhotoUrlList(albumsIdList){
     }
   return photoUrlList;
 }
+
+// 20210418 add START
+//API取得し、parseしてメッセージに返却
+function get_meigen() {
+  const url = "http://meigen.doodlenote.net/api/?c=1";
+  const res = UrlFetchApp.fetch(url);
+  
+  var xmlDoc = XmlService.parse(res.getContentText());
+  var rootDoc = xmlDoc.getRootElement();
+  var data = rootDoc.getChildren("data");
+  
+  //var erab = new Erab(MEIGEN_BOARDID);
+  for (var i=0; i<data.length; i++) {
+    var message = data[i].getChildText("meigen") + "  \n by" + data[i].getChildText("auther");
+  }
+    console.log(message);
+  return message;
+}
+// 20210418 add END
