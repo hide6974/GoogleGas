@@ -82,21 +82,21 @@ function getAllAlbums() {
   // 共有アルバムIDリストをもとに画像URLリスト取得する
   var rawPhotoUrlList = getPhotoUrlList(rawPhotoAlbumsUrlList)
 
-  // 3.画像URLの中から１つだけの画像にランダムで設定する。一覧を取得する
-  
+  // 3.画像URLの中から１つだけの画像にランダムで設定する。一覧を取得する  
   var classPhotoRandom = rawPhotoUrlList[Math.floor(Math.random()*rawPhotoUrlList.length)]
   
-
   if (!classPhotoRandom) {
     return Browser.msgBox('画像１つだけ取得失敗しました')
   }
 
-  // 4.名言取得
+  // 4.名言取得しLine名言メッセージ送信する
   var meigen = get_meigen();
-  // 4.Line送信する
-　pushmessageLine(classPhotoRandom,meigen)
+　pushmessage(meigen)
 
-  //4.セルに書き出す
+  // 5.Line画像送信する
+　pushSendPhotoLine(classPhotoRandom)
+
+  //.セルに書き出す
   //sheet.getRange(1, 1,rawPhotoUrlList.length).setValues(rawPhotoUrlList)
   sheet.getRange(1, 1,rawPhotoUrlList.length).setValue(rawPhotoUrlList)
 
@@ -178,13 +178,11 @@ function getPhotoUrl(){
   }  
 }
 
-//LINEBOTでメッセージを送るサンプル
-function pushmessage_test(classPhotoRandom) {
+//LINEBOTでメッセージを送る
+function pushmessage(meigen) {
   const url = 'https://api.line.me/v2/bot/message/push';
   const lineGroupID = PropertiesService.getScriptProperties().getProperty('LINE_GROUP_ID');//LINE_GROUP_ID
   const linebotAccessToken = PropertiesService.getScriptProperties().getProperty('LINEBOT_ACCESS_TOKEN');
-  var body = 'グループにメッセージ';
-
   UrlFetchApp.fetch(url, {
     'headers': {
       'Content-Type': 'application/json; charset=UTF-8',
@@ -195,13 +193,15 @@ function pushmessage_test(classPhotoRandom) {
       'to': lineGroupID,
       'messages':[{
         'type': 'text',
-        'text': body ,
-      }]
+        'text': meigen ,
+      }],
+       'notificationDisabled': true // trueだとユーザーに通知しない
      })
    })
 }
+
 //LINEBOTで画像メッセージを送る
-function pushmessageLine(classPhotoRandom,meigen) {
+function pushSendPhotoLine(classPhotoRandom) {
   const rawMainPhotoURL =classPhotoRandom + '=w1024-h1024';
   const rawpreviewImageUrl =classPhotoRandom + '=w240-h240';
   const linebotAccessToken = PropertiesService.getScriptProperties().getProperty('LINEBOT_ACCESS_TOKEN');
@@ -210,19 +210,16 @@ function pushmessageLine(classPhotoRandom,meigen) {
   //画像メッセージを送る
   UrlFetchApp.fetch('https://api.line.me/v2/bot/message/push', {
     'headers': {
-      "Content-Type": "application/json; charset=UTF-8",
+      'Content-Type': 'application/json',
       'Authorization': 'Bearer ' + linebotAccessToken,
     },
     'method': 'POST',
     'payload': JSON.stringify({
       'to': lineGroupID, //LINEユーザID
-      'messages' 
-      : [{
+      'messages': [{
         'type': 'image',
         'originalContentUrl': rawMainPhotoURL,
-        'previewImageUrl': rawpreviewImageUrl,
-        'type': 'text','text': meigen,
-      //},{'type': 'text','text': meigen 
+        'previewImageUrl': rawpreviewImageUrl
       }],
       'notificationDisabled': true // trueだとユーザーに通知しない
     }),
